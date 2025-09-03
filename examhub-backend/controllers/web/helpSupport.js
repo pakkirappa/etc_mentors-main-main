@@ -53,14 +53,12 @@ exports.submitTicket = async (req, res, next) => {
     `,
       [userId, issue_type, description]
     );
-    res
-      .status(201)
-      .json({
-        ticket_id: result.insertId,
-        issue_type,
-        description,
-        status: 'open',
-      });
+    res.status(201).json({
+      ticket_id: result.insertId,
+      issue_type,
+      description,
+      status: 'open',
+    });
   } catch (err) {
     next(new Error('Failed to submit ticket'));
   }

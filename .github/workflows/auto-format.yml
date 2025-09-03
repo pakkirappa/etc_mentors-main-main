@@ -28,7 +28,7 @@ jobs:
 
       - name: Format backend code
         working-directory: ./examhub-backend
-        run: npx prettier --write "**/*.{js,json}" --ignore-path ../node_modules
+        run: npx prettier --write "**/*.{js,json}" --ignore-path .prettierignore
 
       - name: Check for changes
         id: verify-changed-files

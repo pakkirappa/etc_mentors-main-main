@@ -105,7 +105,7 @@ jobs:
         working-directory: ./examhub-backend
         run: |
           # Check if prettier would make changes to JavaScript files
-          npx prettier --check "**/*.{js,json}" --ignore-path ../node_modules
+          npx prettier --check "**/*.{js,json}"
         continue-on-error: true
 
       - name: Check for TODO/FIXME comments

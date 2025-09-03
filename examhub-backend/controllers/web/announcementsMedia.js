@@ -99,19 +99,15 @@ exports.createAnnouncement = async (req, res, next) => {
     video_url = video_url ? normalizeGoogleRedirect(video_url) : null;
 
     if (media_url && (!isHttpUrl(media_url) || !isLikelyImage(media_url))) {
-      return res
-        .status(400)
-        .json({
-          error: 'media_url must be a direct image URL (png/jpg/gif/webp/svg).',
-        });
+      return res.status(400).json({
+        error: 'media_url must be a direct image URL (png/jpg/gif/webp/svg).',
+      });
     }
     if (video_url && (!isHttpUrl(video_url) || !isLikelyVideo(video_url))) {
-      return res
-        .status(400)
-        .json({
-          error:
-            'video_url must be a direct video file or a supported host (YouTube/Vimeo).',
-        });
+      return res.status(400).json({
+        error:
+          'video_url must be a direct video file or a supported host (YouTube/Vimeo).',
+      });
     }
 
     const userId = 1; // admin
@@ -134,14 +130,12 @@ exports.createAnnouncement = async (req, res, next) => {
       ]
     );
 
-    res
-      .status(201)
-      .json({
-        announcement_id: result.insertId,
-        ...req.body,
-        media_url,
-        video_url,
-      });
+    res.status(201).json({
+      announcement_id: result.insertId,
+      ...req.body,
+      media_url,
+      video_url,
+    });
   } catch (err) {
     next(new Error('Failed to create announcement'));
   }
@@ -171,19 +165,15 @@ exports.updateAnnouncement = async (req, res, next) => {
     video_url = video_url ? normalizeGoogleRedirect(video_url) : null;
 
     if (media_url && (!isHttpUrl(media_url) || !isLikelyImage(media_url))) {
-      return res
-        .status(400)
-        .json({
-          error: 'media_url must be a direct image URL (png/jpg/gif/webp/svg).',
-        });
+      return res.status(400).json({
+        error: 'media_url must be a direct image URL (png/jpg/gif/webp/svg).',
+      });
     }
     if (video_url && (!isHttpUrl(video_url) || !isLikelyVideo(video_url))) {
-      return res
-        .status(400)
-        .json({
-          error:
-            'video_url must be a direct video file or a supported host (YouTube/Vimeo).',
-        });
+      return res.status(400).json({
+        error:
+          'video_url must be a direct video file or a supported host (YouTube/Vimeo).',
+      });
     }
 
     await pool.query(

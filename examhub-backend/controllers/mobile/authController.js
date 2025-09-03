@@ -35,11 +35,9 @@ exports.register = async (req, res) => {
       [email, mobile, username]
     );
     if (existing.length > 0) {
-      return res
-        .status(400)
-        .json({
-          error: 'User with given email, mobile or username already exists',
-        });
+      return res.status(400).json({
+        error: 'User with given email, mobile or username already exists',
+      });
     }
 
     // Hash password

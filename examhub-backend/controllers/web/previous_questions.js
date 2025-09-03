@@ -149,20 +149,15 @@ exports.create = async (req, res, next) => {
       .filter(s => s.name);
     if (subject_mode === 'single') {
       if (trimmed.length !== 1) {
-        return res
-          .status(400)
-          .json({
-            message: 'Single subject mode requires exactly one subject name.',
-          });
+        return res.status(400).json({
+          message: 'Single subject mode requires exactly one subject name.',
+        });
       }
     } else if (subject_mode === 'multiple') {
       if (trimmed.length < 2) {
-        return res
-          .status(400)
-          .json({
-            message:
-              'Multiple subject mode requires at least two subject names.',
-          });
+        return res.status(400).json({
+          message: 'Multiple subject mode requires at least two subject names.',
+        });
       }
     }
 

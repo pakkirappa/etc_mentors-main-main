@@ -222,12 +222,10 @@ exports.editStudent = async (req, res, next) => {
       [id, username, student_id, email]
     );
     if (conflicts.length > 0)
-      return res
-        .status(400)
-        .json({
-          message:
-            'Username, Student ID or Email already in use by another student',
-        });
+      return res.status(400).json({
+        message:
+          'Username, Student ID or Email already in use by another student',
+      });
 
     await pool.query(
       `
