@@ -23,11 +23,20 @@ exports.updateSetting = async (req, res, next) => {
     const { key } = req.params;
     const { setting_value } = req.body;
     const userId = 1; // Assume admin user_id=1 for demo
-    await pool.query(`
+    await pool.query(
+      `
       INSERT INTO settings (setting_key, setting_value, updated_by)
       VALUES (?, ?, ?)
       ON DUPLICATE KEY UPDATE setting_value = ?, updated_by = ?, updated_at = CURRENT_TIMESTAMP
-    `, [key, JSON.stringify(setting_value), userId, JSON.stringify(setting_value), userId]);
+    `,
+      [
+        key,
+        JSON.stringify(setting_value),
+        userId,
+        JSON.stringify(setting_value),
+        userId,
+      ]
+    );
     res.json({ message: 'Setting updated' });
   } catch (err) {
     next(new Error('Failed to update setting'));
@@ -87,13 +96,19 @@ exports.getDefaultRoles = async (req, res, next) => {
     }
 
     // Fallback: prefer roles that exist in the roles table, otherwise defaults.
-    const [roleRows] = await pool.query(`SELECT LOWER(name) AS name FROM roles`);
+    const [roleRows] = await pool.query(
+      `SELECT LOWER(name) AS name FROM roles`
+    );
     const roleSet = new Set(roleRows.map(r => r.name));
 
     const defaults = {
       new_students: roleSet.has('student') ? 'student' : 'student',
-      teachers: roleSet.has('instructor') ? 'instructor' : (roleSet.has('teacher') ? 'teacher' : 'instructor'),
-      administrators: roleSet.has('admin') ? 'admin' : 'admin'
+      teachers: roleSet.has('instructor')
+        ? 'instructor'
+        : roleSet.has('teacher')
+          ? 'teacher'
+          : 'instructor',
+      administrators: roleSet.has('admin') ? 'admin' : 'admin',
     };
 
     res.json(defaults);

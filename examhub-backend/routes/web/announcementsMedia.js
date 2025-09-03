@@ -16,8 +16,12 @@ router.post(
     body('content').notEmpty(),
     body('announcement_type').isIn(['announcement', 'poster', 'video']),
     body('priority').isIn(['high', 'medium', 'low']),
-    body('target_audience').isIn(['All Students', 'IIT Students', 'NEET Students']),
-    body('status').isIn(['active', 'scheduled', 'expired', 'draft'])
+    body('target_audience').isIn([
+      'All Students',
+      'IIT Students',
+      'NEET Students',
+    ]),
+    body('status').isIn(['active', 'scheduled', 'expired', 'draft']),
   ],
   announcementsController.createAnnouncement
 );
@@ -25,10 +29,7 @@ router.post(
 router.put(
   '/:id',
   auth,
-  [
-    body('title').notEmpty(),
-    body('content').notEmpty()
-  ],
+  [body('title').notEmpty(), body('content').notEmpty()],
   announcementsController.updateAnnouncement
 );
 

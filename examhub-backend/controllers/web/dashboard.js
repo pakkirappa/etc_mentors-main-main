@@ -9,16 +9,24 @@ exports.getStats = async (req, res, next) => {
 
     const dateConds = [];
     const dateParams = [];
-    if (startDate) { dateConds.push('e.start_date >= ?'); dateParams.push(startDate); }
-    if (endDate)   { dateConds.push('e.start_date <= ?'); dateParams.push(endDate); }
+    if (startDate) {
+      dateConds.push('e.start_date >= ?');
+      dateParams.push(startDate);
+    }
+    if (endDate) {
+      dateConds.push('e.start_date <= ?');
+      dateParams.push(endDate);
+    }
 
-    const examsWhere = dateConds.length ? `WHERE ${dateConds.join(' AND ')}` : '';
-    const examsAnd   = dateConds.length ? ` AND ${dateConds.join(' AND ')}` : '';
+    const examsWhere = dateConds.length
+      ? `WHERE ${dateConds.join(' AND ')}`
+      : '';
+    const examsAnd = dateConds.length ? ` AND ${dateConds.join(' AND ')}` : '';
 
     const params = [
-      ...dateParams,                // for total_exams
-      ...dateParams,                // for avg_score
-      ...dateParams                 // for completion_rate
+      ...dateParams, // for total_exams
+      ...dateParams, // for avg_score
+      ...dateParams, // for completion_rate
     ];
 
     const sql = `
@@ -56,7 +64,8 @@ exports.getStats = async (req, res, next) => {
       total_students: Number(stats.total_students) || 0,
       total_exams: Number(stats.total_exams) || 0,
       avg_score: stats.avg_score === null ? 0 : Number(stats.avg_score),
-      completion_rate: stats.completion_rate === null ? 0 : Number(stats.completion_rate),
+      completion_rate:
+        stats.completion_rate === null ? 0 : Number(stats.completion_rate),
     };
 
     res.json(payload);
@@ -72,10 +81,18 @@ exports.getRecentExams = async (req, res, next) => {
 
     const dateConds = [];
     const dateParams = [];
-    if (startDate) { dateConds.push('e.start_date >= ?'); dateParams.push(startDate); }
-    if (endDate)   { dateConds.push('e.start_date <= ?'); dateParams.push(endDate); }
+    if (startDate) {
+      dateConds.push('e.start_date >= ?');
+      dateParams.push(startDate);
+    }
+    if (endDate) {
+      dateConds.push('e.start_date <= ?');
+      dateParams.push(endDate);
+    }
 
-    const whereClause = dateConds.length ? `WHERE ${dateConds.join(' AND ')}` : '';
+    const whereClause = dateConds.length
+      ? `WHERE ${dateConds.join(' AND ')}`
+      : '';
 
     const sql = `
       SELECT

@@ -1,8 +1,8 @@
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const db = require("../../config/db");
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const db = require('../../config/db');
 
-const JWT_SECRET = process.env.JWT_SECRET || "examhub_secret";
+const JWT_SECRET = process.env.JWT_SECRET || 'examhub_secret';
 
 // ======================= REGISTER =======================
 exports.register = async (req, res) => {
@@ -20,11 +20,13 @@ exports.register = async (req, res) => {
       city,
       address,
       dob,
-      profile_image
+      profile_image,
     } = req.body;
 
     if (!username || !email || !mobile || !password) {
-      return res.status(400).json({ error: "Username, Email, Mobile, and Password are required" });
+      return res
+        .status(400)
+        .json({ error: 'Username, Email, Mobile, and Password are required' });
     }
 
     // Check if email/mobile already exists
@@ -33,7 +35,11 @@ exports.register = async (req, res) => {
       [email, mobile, username]
     );
     if (existing.length > 0) {
-      return res.status(400).json({ error: "User with given email, mobile or username already exists" });
+      return res
+        .status(400)
+        .json({
+          error: 'User with given email, mobile or username already exists',
+        });
     }
 
     // Hash password
@@ -57,17 +63,17 @@ exports.register = async (req, res) => {
         city,
         address,
         dob,
-        profile_image
+        profile_image,
       ]
     );
 
     return res.status(201).json({
-      message: "Registration successful",
-      user_id: result.insertId
+      message: 'Registration successful',
+      user_id: result.insertId,
     });
   } catch (err) {
-    console.error("Register Error:", err);
-    return res.status(500).json({ error: "Server error during registration" });
+    console.error('Register Error:', err);
+    return res.status(500).json({ error: 'Server error during registration' });
   }
 };
 
@@ -77,7 +83,9 @@ exports.login = async (req, res) => {
     const { email_or_mobile, password } = req.body;
 
     if (!email_or_mobile || !password) {
-      return res.status(400).json({ error: "Email/Mobile and Password are required" });
+      return res
+        .status(400)
+        .json({ error: 'Email/Mobile and Password are required' });
     }
 
     // Find user by email OR mobile OR username
@@ -87,7 +95,7 @@ exports.login = async (req, res) => {
     );
 
     if (rows.length === 0) {
-      return res.status(400).json({ error: "User not found" });
+      return res.status(400).json({ error: 'User not found' });
     }
 
     const user = rows[0];
@@ -95,15 +103,13 @@ exports.login = async (req, res) => {
     // Verify password
     const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {
-      return res.status(400).json({ error: "Invalid credentials" });
+      return res.status(400).json({ error: 'Invalid credentials' });
     }
 
     // Generate JWT
-    const token = jwt.sign(
-      { id: user.user_id, role: user.role },
-      JWT_SECRET,
-      { expiresIn: "1h" }
-    );
+    const token = jwt.sign({ id: user.user_id, role: user.role }, JWT_SECRET, {
+      expiresIn: '1h',
+    });
 
     // Response with safe user data
     return res.json({
@@ -123,11 +129,11 @@ exports.login = async (req, res) => {
         city: user.city,
         address: user.address,
         dob: user.dob,
-        profile_image: user.profile_image
-      }
+        profile_image: user.profile_image,
+      },
     });
   } catch (err) {
-    console.error("Login Error:", err);
-    return res.status(500).json({ error: "Server error during login" });
+    console.error('Login Error:', err);
+    return res.status(500).json({ error: 'Server error during login' });
   }
 };

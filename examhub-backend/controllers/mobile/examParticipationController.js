@@ -1,4 +1,4 @@
-const db = require("../../config/db");
+const db = require('../../config/db');
 
 // Fetch questions (paginated)
 exports.getQuestions = async (req, res) => {
@@ -17,7 +17,7 @@ exports.getQuestions = async (req, res) => {
 
     // Options for MCQs
     for (let q of questions) {
-      if (q.question_type === "mcq") {
+      if (q.question_type === 'mcq') {
         const [options] = await db.query(
           `SELECT option_id, option_text FROM question_options WHERE question_id = ?`,
           [q.question_id]
@@ -28,8 +28,8 @@ exports.getQuestions = async (req, res) => {
 
     res.json({ exam_id: examId, questions });
   } catch (err) {
-    console.error("Get Questions Error:", err);
-    res.status(500).json({ error: "Server error fetching questions" });
+    console.error('Get Questions Error:', err);
+    res.status(500).json({ error: 'Server error fetching questions' });
   }
 };
 
@@ -44,7 +44,7 @@ exports.saveAnswer = async (req, res) => {
     const { selected_option_ids = null, answer_text = null } = req.body || {};
 
     if (!selected_option_ids && !answer_text) {
-      return res.status(400).json({ error: "Answer data is required" });
+      return res.status(400).json({ error: 'Answer data is required' });
     }
 
     // Get student_exam_id
@@ -54,7 +54,7 @@ exports.saveAnswer = async (req, res) => {
     );
 
     if (!studentExam) {
-      return res.status(403).json({ error: "Not registered for this exam" });
+      return res.status(403).json({ error: 'Not registered for this exam' });
     }
 
     const studentExamId = studentExam.student_exam_id;
@@ -85,17 +85,16 @@ exports.saveAnswer = async (req, res) => {
         questionId,
         selected_option_ids ? JSON.stringify(selected_option_ids) : null,
         answer_text,
-        isCorrect
+        isCorrect,
       ]
     );
 
-    res.json({ message: "Answer saved successfully" });
+    res.json({ message: 'Answer saved successfully' });
   } catch (err) {
-    console.error("Save Answer Error:", err);
-    res.status(500).json({ error: "Server error saving answer" });
+    console.error('Save Answer Error:', err);
+    res.status(500).json({ error: 'Server error saving answer' });
   }
 };
-
 
 // Submit exam
 exports.submitExam = async (req, res) => {
@@ -110,7 +109,7 @@ exports.submitExam = async (req, res) => {
     );
 
     if (!studentExam) {
-      return res.status(403).json({ error: "Not registered for this exam" });
+      return res.status(403).json({ error: 'Not registered for this exam' });
     }
 
     const studentExamId = studentExam.student_exam_id;
@@ -135,7 +134,8 @@ exports.submitExam = async (req, res) => {
       [examId]
     );
 
-    const percentage = exam.total_marks > 0 ? (score / exam.total_marks) * 100 : 0;
+    const percentage =
+      exam.total_marks > 0 ? (score / exam.total_marks) * 100 : 0;
 
     // Update student_exams
     await db.query(
@@ -143,9 +143,14 @@ exports.submitExam = async (req, res) => {
       [score, percentage, studentExamId]
     );
 
-    res.json({ message: "Exam submitted", score, percentage, status: "completed" });
+    res.json({
+      message: 'Exam submitted',
+      score,
+      percentage,
+      status: 'completed',
+    });
   } catch (err) {
-    console.error("Submit Exam Error:", err);
-    res.status(500).json({ error: "Server error submitting exam" });
+    console.error('Submit Exam Error:', err);
+    res.status(500).json({ error: 'Server error submitting exam' });
   }
 };

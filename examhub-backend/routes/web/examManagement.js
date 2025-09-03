@@ -14,10 +14,18 @@ router.delete('/:id', auth, examController.deleteExam);
 router.get('/:id/questions', auth, examController.getQuestions);
 router.post('/:id/questions', auth, examController.addQuestion);
 router.put('/:id/questions/:questionId', auth, examController.updateQuestion);
-router.delete('/:id/questions/:questionId', auth, examController.deleteQuestion);
+router.delete(
+  '/:id/questions/:questionId',
+  auth,
+  examController.deleteQuestion
+);
 router.get('/meta/question-types', auth, examController.getQuestionTypesMeta);
 router.get('/meta/exam-categories', auth, examController.getExamCategoriesMeta);
-router.get('/:id/questions/template.csv', auth, examController.downloadQuestionsTemplate);
+router.get(
+  '/:id/questions/template.csv',
+  auth,
+  examController.downloadQuestionsTemplate
+);
 router.get('/meta/exam-types', auth, examController.getExamTypesMeta);
 // Exam Key PDF
 router.get('/:id/answer-key.pdf', auth, examController.downloadAnswerKeyPdf);

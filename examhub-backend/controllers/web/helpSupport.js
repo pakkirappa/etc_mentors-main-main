@@ -46,11 +46,21 @@ exports.submitTicket = async (req, res, next) => {
   try {
     const { issue_type, description } = req.body;
     const userId = 1; // Assume admin user_id=1 for demo
-    const [result] = await pool.query(`
+    const [result] = await pool.query(
+      `
       INSERT INTO support_tickets (user_id, issue_type, description)
       VALUES (?, ?, ?)
-    `, [userId, issue_type, description]);
-    res.status(201).json({ ticket_id: result.insertId, issue_type, description, status: 'open' });
+    `,
+      [userId, issue_type, description]
+    );
+    res
+      .status(201)
+      .json({
+        ticket_id: result.insertId,
+        issue_type,
+        description,
+        status: 'open',
+      });
   } catch (err) {
     next(new Error('Failed to submit ticket'));
   }

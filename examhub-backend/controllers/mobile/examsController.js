@@ -1,9 +1,9 @@
-const db = require("../../config/db");
+const db = require('../../config/db');
 
 // List exams
 exports.getExams = async (req, res) => {
   try {
-    const filter = req.query.filter || "ALL";
+    const filter = req.query.filter || 'ALL';
 
     let query = `SELECT exam_id, title, exam_type, category, duration, total_marks, start_date, start_time, price_type, price_amount, status 
                  FROM exams 
@@ -11,8 +11,8 @@ exports.getExams = async (req, res) => {
 
     const params = [];
 
-    if (filter !== "ALL") {
-      query += " AND (exam_type = ? OR category = ?)";
+    if (filter !== 'ALL') {
+      query += ' AND (exam_type = ? OR category = ?)';
       params.push(filter, filter);
     }
 
@@ -20,8 +20,8 @@ exports.getExams = async (req, res) => {
 
     res.json(rows);
   } catch (err) {
-    console.error("Get Exams Error:", err);
-    res.status(500).json({ error: "Server error fetching exams" });
+    console.error('Get Exams Error:', err);
+    res.status(500).json({ error: 'Server error fetching exams' });
   }
 };
 
@@ -38,7 +38,9 @@ exports.registerExam = async (req, res) => {
     );
 
     if (existing.length > 0) {
-      return res.status(400).json({ error: "Already registered for this exam" });
+      return res
+        .status(400)
+        .json({ error: 'Already registered for this exam' });
     }
 
     await db.query(
@@ -46,10 +48,10 @@ exports.registerExam = async (req, res) => {
       [userId, examId]
     );
 
-    res.json({ message: "Registered successfully" });
+    res.json({ message: 'Registered successfully' });
   } catch (err) {
-    console.error("Register Exam Error:", err);
-    res.status(500).json({ error: "Server error registering exam" });
+    console.error('Register Exam Error:', err);
+    res.status(500).json({ error: 'Server error registering exam' });
   }
 };
 
@@ -66,7 +68,9 @@ exports.startExam = async (req, res) => {
     );
 
     if (check.length === 0) {
-      return res.status(403).json({ error: "You are not registered for this exam" });
+      return res
+        .status(403)
+        .json({ error: 'You are not registered for this exam' });
     }
 
     // Get exam details
@@ -76,7 +80,7 @@ exports.startExam = async (req, res) => {
     );
 
     if (examRows.length === 0) {
-      return res.status(400).json({ error: "Exam not active yet" });
+      return res.status(400).json({ error: 'Exam not active yet' });
     }
 
     const exam = examRows[0];
@@ -91,7 +95,7 @@ exports.startExam = async (req, res) => {
 
     res.json(exam);
   } catch (err) {
-    console.error("Start Exam Error:", err);
-    res.status(500).json({ error: "Server error starting exam" });
+    console.error('Start Exam Error:', err);
+    res.status(500).json({ error: 'Server error starting exam' });
   }
 };

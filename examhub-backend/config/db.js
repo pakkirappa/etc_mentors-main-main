@@ -15,8 +15,7 @@ const pool = mysql.createPool({
   uri: process.env.DB_URL || 'mysql://root:root@localhost:3306/ExamHubDB',
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 0,
 });
-
 
 module.exports = pool;

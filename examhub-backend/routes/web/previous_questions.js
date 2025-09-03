@@ -4,7 +4,7 @@ const router = express.Router();
 const auth = require('../../middleware/auth');
 const ctrl = require('../../controllers/web/previous_questions');
 
-router.get('/', auth, ctrl.list);   
+router.get('/', auth, ctrl.list);
 router.post('/', auth, ctrl.create);
 //delete a record (owner-only)
 router.delete('/:id', auth, ctrl.remove);
@@ -21,16 +21,21 @@ router.get('/proxy-download', auth, async (req, res) => {
 
     const upstream = await fetch(String(url), { redirect: 'follow' });
     if (!upstream.ok) {
-      return res.status(upstream.status).send(`Upstream failed: ${upstream.statusText}`);
+      return res
+        .status(upstream.status)
+        .send(`Upstream failed: ${upstream.statusText}`);
     }
 
     // Derive filename: from upstream Content-Disposition OR from the URL
     let filename = 'file';
     const upstreamCD = upstream.headers.get('content-disposition') || '';
-    const cdMatch =
-      /filename\*?=(?:UTF-8''|")?([^\";]+)/i.exec(upstreamCD); // basic parse
+    const cdMatch = /filename\*?=(?:UTF-8''|")?([^\";]+)/i.exec(upstreamCD); // basic parse
     if (cdMatch && cdMatch[1]) {
-      try { filename = decodeURIComponent(cdMatch[1]); } catch { filename = cdMatch[1]; }
+      try {
+        filename = decodeURIComponent(cdMatch[1]);
+      } catch {
+        filename = cdMatch[1];
+      }
     } else {
       try {
         const u = new URL(String(url));
@@ -39,7 +44,8 @@ router.get('/proxy-download', auth, async (req, res) => {
       } catch (_) {}
     }
 
-    const contentType = upstream.headers.get('content-type') || 'application/octet-stream';
+    const contentType =
+      upstream.headers.get('content-type') || 'application/octet-stream';
 
     // Force download
     res.setHeader('Content-Type', contentType);

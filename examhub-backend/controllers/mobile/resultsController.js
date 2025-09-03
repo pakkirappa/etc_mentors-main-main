@@ -1,4 +1,4 @@
-const db = require("../../config/db");
+const db = require('../../config/db');
 
 // Get student results summary
 exports.getMyResults = async (req, res) => {
@@ -28,13 +28,14 @@ exports.getMyResults = async (req, res) => {
       );
 
       result.rank = total_students - below_me;
-      result.percentile = total_students > 0 ? (below_me / total_students) * 100 : 0;
+      result.percentile =
+        total_students > 0 ? (below_me / total_students) * 100 : 0;
     }
 
     res.json(rows);
   } catch (err) {
-    console.error("Get My Results Error:", err);
-    res.status(500).json({ error: "Server error fetching results" });
+    console.error('Get My Results Error:', err);
+    res.status(500).json({ error: 'Server error fetching results' });
   }
 };
 
@@ -54,7 +55,7 @@ exports.getExamResult = async (req, res) => {
     );
 
     if (!examResult) {
-      return res.status(404).json({ error: "Result not found" });
+      return res.status(404).json({ error: 'Result not found' });
     }
 
     // Rank + percentile
@@ -69,7 +70,8 @@ exports.getExamResult = async (req, res) => {
     );
 
     examResult.rank = total_students - below_me;
-    examResult.percentile = total_students > 0 ? (below_me / total_students) * 100 : 0;
+    examResult.percentile =
+      total_students > 0 ? (below_me / total_students) * 100 : 0;
 
     // Subject-wise results
     const [subjects] = await db.query(
@@ -83,7 +85,7 @@ exports.getExamResult = async (req, res) => {
 
     res.json(examResult);
   } catch (err) {
-    console.error("Get Exam Result Error:", err);
-    res.status(500).json({ error: "Server error fetching exam result" });
+    console.error('Get Exam Result Error:', err);
+    res.status(500).json({ error: 'Server error fetching exam result' });
   }
 };

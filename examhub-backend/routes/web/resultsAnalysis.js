@@ -8,7 +8,11 @@ router.get('/regions', auth, resultsController.getRegions);
 router.get('/subjects-list', auth, resultsController.getSubjectsList);
 
 // Keep subjects route above :examId
-router.get('/subjects/:studentExamId', auth, resultsController.getSubjectScores);
+router.get(
+  '/subjects/:studentExamId',
+  auth,
+  resultsController.getSubjectScores
+);
 
 // Put param route last
 router.get('/:examId', auth, resultsController.getResultsByExam);

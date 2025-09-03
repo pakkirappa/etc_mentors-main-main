@@ -1,4 +1,4 @@
-const db = require("../../config/db");
+const db = require('../../config/db');
 
 // Summary: progress + rank
 exports.getSummary = async (req, res) => {
@@ -40,20 +40,21 @@ exports.getSummary = async (req, res) => {
         [examId, myScore]
       );
 
-      const percentile = total_students > 0 ? (below_me / total_students) * 100 : 0;
+      const percentile =
+        total_students > 0 ? (below_me / total_students) * 100 : 0;
 
       rankData = {
         latest_exam: examId,
         percentile,
         position: total_students - below_me,
-        total_students
+        total_students,
       };
     }
 
     res.json({ progress, rank: rankData });
   } catch (err) {
-    console.error("Dashboard Summary Error:", err);
-    res.status(500).json({ error: "Server error in summary" });
+    console.error('Dashboard Summary Error:', err);
+    res.status(500).json({ error: 'Server error in summary' });
   }
 };
 
@@ -72,8 +73,8 @@ exports.getOngoingExams = async (req, res) => {
 
     res.json(rows);
   } catch (err) {
-    console.error("Ongoing Exams Error:", err);
-    res.status(500).json({ error: "Server error in ongoing exams" });
+    console.error('Ongoing Exams Error:', err);
+    res.status(500).json({ error: 'Server error in ongoing exams' });
   }
 };
 
@@ -85,7 +86,7 @@ exports.getVideos = async (req, res) => {
     );
     res.json(videos);
   } catch (err) {
-    console.error("Videos Error:", err);
-    res.status(500).json({ error: "Server error in videos" });
+    console.error('Videos Error:', err);
+    res.status(500).json({ error: 'Server error in videos' });
   }
 };

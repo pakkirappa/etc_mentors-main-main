@@ -1,4 +1,4 @@
-const db = require("../../config/db");
+const db = require('../../config/db');
 
 // Get student profile
 exports.getProfile = async (req, res) => {
@@ -13,13 +13,13 @@ exports.getProfile = async (req, res) => {
     );
 
     if (rows.length === 0) {
-      return res.status(404).json({ error: "User not found" });
+      return res.status(404).json({ error: 'User not found' });
     }
 
     res.json(rows[0]);
   } catch (err) {
-    console.error("Get Profile Error:", err);
-    res.status(500).json({ error: "Server error fetching profile" });
+    console.error('Get Profile Error:', err);
+    res.status(500).json({ error: 'Server error fetching profile' });
   }
 };
 
@@ -38,7 +38,7 @@ exports.updateProfile = async (req, res) => {
       college,
       address,
       dob,
-      profile_image
+      profile_image,
     } = req.body;
 
     await db.query(
@@ -58,13 +58,13 @@ exports.updateProfile = async (req, res) => {
         address,
         dob,
         profile_image,
-        userId
+        userId,
       ]
     );
 
-    res.json({ message: "Profile updated successfully" });
+    res.json({ message: 'Profile updated successfully' });
   } catch (err) {
-    console.error("Update Profile Error:", err);
-    res.status(500).json({ error: "Server error updating profile" });
+    console.error('Update Profile Error:', err);
+    res.status(500).json({ error: 'Server error updating profile' });
   }
 };

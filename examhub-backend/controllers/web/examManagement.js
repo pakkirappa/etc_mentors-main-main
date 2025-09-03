@@ -1,6 +1,6 @@
 // controllers/examManagement.js
 const db = require('../../config/db');
-const ExcelJS = require("exceljs");
+const ExcelJS = require('exceljs');
 const PDFDocument = require('pdfkit');
 
 // Get all exams with optional date filtering
@@ -38,9 +38,16 @@ exports.getExams = async (req, res) => {
 
     const params = [];
 
-    if (startDate) { sql += ` AND e.start_date >= ?`; params.push(startDate); }
-    if (endDate)   { sql += ` AND e.start_date <= ?`; params.push(endDate); }
-    if (category && category !== 'all') {  // treat "all" as no filter
+    if (startDate) {
+      sql += ` AND e.start_date >= ?`;
+      params.push(startDate);
+    }
+    if (endDate) {
+      sql += ` AND e.start_date <= ?`;
+      params.push(endDate);
+    }
+    if (category && category !== 'all') {
+      // treat "all" as no filter
       sql += ` AND e.category = ?`;
       params.push(category);
     }
@@ -50,7 +57,7 @@ exports.getExams = async (req, res) => {
     const [rows] = await db.query(sql, params);
     const formatted = rows.map(r => ({
       ...r,
-      subjects: r.subjects ? r.subjects.split(',') : []
+      subjects: r.subjects ? r.subjects.split(',') : [],
     }));
 
     res.json(formatted);
@@ -60,15 +67,19 @@ exports.getExams = async (req, res) => {
   }
 };
 
-
 // Get single exam by ID (with subjects)
 exports.getExamById = async (req, res) => {
   try {
     const examId = req.params.id;
-    const [[exam]] = await db.query(`SELECT * FROM exams WHERE exam_id = ?`, [examId]);
+    const [[exam]] = await db.query(`SELECT * FROM exams WHERE exam_id = ?`, [
+      examId,
+    ]);
     if (!exam) return res.status(404).json({ message: 'Exam not found' });
 
-    const [subjects] = await db.query(`SELECT * FROM exam_subjects WHERE exam_id = ?`, [examId]);
+    const [subjects] = await db.query(
+      `SELECT * FROM exam_subjects WHERE exam_id = ?`,
+      [examId]
+    );
     exam.subjects = subjects;
 
     res.json(exam);
@@ -80,20 +91,40 @@ exports.getExamById = async (req, res) => {
 // controllers/examManagement.js
 exports.createExam = async (req, res) => {
   const {
-    title, exam_type, exam_format, total_marks, duration,
-    start_date, start_time, venue, description,
+    title,
+    exam_type,
+    exam_format,
+    total_marks,
+    duration,
+    start_date,
+    start_time,
+    venue,
+    description,
     subjects,
     category,
-    set_type
+    set_type,
   } = req.body;
 
-  if (!title || !exam_type || !exam_format || !total_marks || !duration || !start_date || !start_time) {
+  if (
+    !title ||
+    !exam_type ||
+    !exam_format ||
+    !total_marks ||
+    !duration ||
+    !start_date ||
+    !start_time
+  ) {
     return res.status(400).json({ message: 'Missing required fields' });
   }
 
-  const isRealtime = String(category || '').trim().toLowerCase() === 'realtime';
+  const isRealtime =
+    String(category || '')
+      .trim()
+      .toLowerCase() === 'realtime';
   if (isRealtime && !String(set_type || '').trim()) {
-    return res.status(400).json({ message: 'set_type is required for Realtime exams' });
+    return res
+      .status(400)
+      .json({ message: 'set_type is required for Realtime exams' });
   }
 
   const conn = await db.getConnection();
@@ -110,21 +141,35 @@ exports.createExam = async (req, res) => {
       );
       if (dup.length) {
         await conn.rollback();
-        return res.status(409).json({ message: 'This set already exists for this exam group.' });
+        return res
+          .status(409)
+          .json({ message: 'This set already exists for this exam group.' });
       }
     }
 
-    const [result] = await conn.query(`
+    const [result] = await conn.query(
+      `
       INSERT INTO exams (
         title, exam_type, exam_format, total_marks, duration,
         start_date, start_time, venue, status, description, category, set_type
       )
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [
-      title, exam_type, exam_format, total_marks, duration,
-      start_date, start_time, venue || 'Online Platform', 'scheduled',
-      description || null, category || null, isRealtime ? set_type : null
-    ]);
+    `,
+      [
+        title,
+        exam_type,
+        exam_format,
+        total_marks,
+        duration,
+        start_date,
+        start_time,
+        venue || 'Online Platform',
+        'scheduled',
+        description || null,
+        category || null,
+        isRealtime ? set_type : null,
+      ]
+    );
 
     const examId = result.insertId;
 
@@ -143,7 +188,9 @@ exports.createExam = async (req, res) => {
     await conn.rollback();
     // If unique index caught the duplicate
     if (err.code === 'ER_DUP_ENTRY') {
-      return res.status(409).json({ message: 'This set already exists for this exam group.' });
+      return res
+        .status(409)
+        .json({ message: 'This set already exists for this exam group.' });
     }
     res.status(500).json({ message: err.message });
   } finally {
@@ -176,10 +223,15 @@ exports.cloneExamWithNewSet = async (req, res) => {
       return res.status(404).json({ message: 'Source exam not found' });
     }
     const src = rows[0];
-    const isRealtime = String(src.category || '').trim().toLowerCase() === 'realtime';
+    const isRealtime =
+      String(src.category || '')
+        .trim()
+        .toLowerCase() === 'realtime';
     if (!isRealtime) {
       await conn.rollback();
-      return res.status(400).json({ message: 'Clone-set is only allowed for Realtime exams' });
+      return res
+        .status(400)
+        .json({ message: 'Clone-set is only allowed for Realtime exams' });
     }
 
     // Prevent duplicate set in the same group (title+start_date+category)
@@ -191,7 +243,9 @@ exports.cloneExamWithNewSet = async (req, res) => {
     );
     if (dup.length) {
       await conn.rollback();
-      return res.status(409).json({ message: 'This set already exists for this exam group.' });
+      return res
+        .status(409)
+        .json({ message: 'This set already exists for this exam group.' });
     }
 
     // Insert new exam row with the new set_type
@@ -202,9 +256,18 @@ exports.cloneExamWithNewSet = async (req, res) => {
       )
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        src.title, src.exam_type, src.exam_format, src.total_marks, src.duration,
-        src.start_date, src.start_time, src.venue, src.status, src.description,
-        src.category, set_type
+        src.title,
+        src.exam_type,
+        src.exam_format,
+        src.total_marks,
+        src.duration,
+        src.start_date,
+        src.start_time,
+        src.venue,
+        src.status,
+        src.description,
+        src.category,
+        set_type,
       ]
     );
     const newExamId = ins.insertId;
@@ -228,7 +291,9 @@ exports.cloneExamWithNewSet = async (req, res) => {
   } catch (err) {
     await conn.rollback();
     if (err.code === 'ER_DUP_ENTRY') {
-      return res.status(409).json({ message: 'This set already exists for this exam group.' });
+      return res
+        .status(409)
+        .json({ message: 'This set already exists for this exam group.' });
     }
     res.status(500).json({ message: err.message });
   } finally {
@@ -239,44 +304,80 @@ exports.cloneExamWithNewSet = async (req, res) => {
 // Update exam (with subject deletion support)
 exports.updateExam = async (req, res) => {
   const {
-    title, exam_type, exam_format, total_marks, duration,
-    start_date, start_time, venue, description, subjects,
-    category,        // <--- NEW
-    set_type         // <--- NEW
+    title,
+    exam_type,
+    exam_format,
+    total_marks,
+    duration,
+    start_date,
+    start_time,
+    venue,
+    description,
+    subjects,
+    category, // <--- NEW
+    set_type, // <--- NEW
   } = req.body;
   const examId = req.params.id;
 
-  if (!title || !exam_type || !exam_format || !total_marks || !duration || !start_date || !start_time) {
+  if (
+    !title ||
+    !exam_type ||
+    !exam_format ||
+    !total_marks ||
+    !duration ||
+    !start_date ||
+    !start_time
+  ) {
     return res.status(400).json({ message: 'Missing required fields' });
   }
-  if (String(category || '').trim().toLowerCase() === 'realtime' && !String(set_type || '').trim()) {
-    return res.status(400).json({ message: 'set_type is required for Realtime exams' });
+  if (
+    String(category || '')
+      .trim()
+      .toLowerCase() === 'realtime' &&
+    !String(set_type || '').trim()
+  ) {
+    return res
+      .status(400)
+      .json({ message: 'set_type is required for Realtime exams' });
   }
 
   const conn = await db.getConnection();
   try {
     await conn.beginTransaction();
 
-    await conn.query(`
+    await conn.query(
+      `
       UPDATE exams
       SET title=?, exam_type=?, exam_format=?, total_marks=?, duration=?,
           start_date=?, start_time=?, venue=?, description=?, category=?, set_type=?
       WHERE exam_id=?
-    `, [
-      title, exam_type, exam_format, total_marks, duration,
-      start_date, start_time,
-      venue || 'Online Platform', description || null,
-      category || null, set_type || null,
-      examId
-    ]);
+    `,
+      [
+        title,
+        exam_type,
+        exam_format,
+        total_marks,
+        duration,
+        start_date,
+        start_time,
+        venue || 'Online Platform',
+        description || null,
+        category || null,
+        set_type || null,
+        examId,
+      ]
+    );
 
     await conn.query(`DELETE FROM exam_subjects WHERE exam_id=?`, [examId]);
     if (Array.isArray(subjects) && subjects.length > 0) {
       for (const subj of subjects) {
-        await conn.query(`
+        await conn.query(
+          `
           INSERT INTO exam_subjects (exam_id, subject, marks)
           VALUES (?, ?, ?)
-        `, [examId, subj.subject, subj.marks]);
+        `,
+          [examId, subj.subject, subj.marks]
+        );
       }
     }
 
@@ -304,11 +405,17 @@ exports.deleteExam = async (req, res) => {
 exports.getQuestions = async (req, res) => {
   try {
     const examId = req.params.id;
-    const [questions] = await db.query(`SELECT * FROM questions WHERE exam_id = ?`, [examId]);
+    const [questions] = await db.query(
+      `SELECT * FROM questions WHERE exam_id = ?`,
+      [examId]
+    );
 
     for (const q of questions) {
       if (q.question_type === 'mcq') {
-        const [options] = await db.query(`SELECT * FROM question_options WHERE question_id=? ORDER BY option_order`, [q.question_id]);
+        const [options] = await db.query(
+          `SELECT * FROM question_options WHERE question_id=? ORDER BY option_order`,
+          [q.question_id]
+        );
         q.options = options;
       }
     }
@@ -321,10 +428,23 @@ exports.getQuestions = async (req, res) => {
 
 // Add question (MCQ or others)
 exports.addQuestion = async (req, res) => {
-  let { question_text, question_type, difficulty, marks, options, explanation = null } = req.body;
+  let {
+    question_text,
+    question_type,
+    difficulty,
+    marks,
+    options,
+    explanation = null,
+  } = req.body;
   const examId = req.params.id;
 
-  if (!examId || !question_text || !question_type || !difficulty || marks == null) {
+  if (
+    !examId ||
+    !question_text ||
+    !question_type ||
+    !difficulty ||
+    marks == null
+  ) {
     return res.status(400).json({ message: 'Missing required fields' });
   }
 
@@ -348,7 +468,10 @@ exports.addQuestion = async (req, res) => {
     if (question_type === 'mcq' && Array.isArray(options)) {
       for (let i = 0; i < options.length; i++) {
         const row = options[i] || {};
-        const isCorrect = row.is_correct === 1 || row.is_correct === true || row.is_correct === '1';
+        const isCorrect =
+          row.is_correct === 1 ||
+          row.is_correct === true ||
+          row.is_correct === '1';
         await conn.query(
           `INSERT INTO question_options (question_id, option_text, is_correct, option_order)
            VALUES (?, ?, ?, ?)`,
@@ -376,20 +499,33 @@ exports.updateQuestion = async (req, res) => {
   try {
     await conn.beginTransaction();
 
-    await conn.query(`
+    await conn.query(
+      `
       UPDATE questions
       SET question_text=?, question_type=?, difficulty=?, marks=?
       WHERE question_id=? AND exam_id=?
-    `, [question_text, question_type, difficulty, marks, questionId, examId]);
+    `,
+      [question_text, question_type, difficulty, marks, questionId, examId]
+    );
 
     // Replace options if MCQ
-    await conn.query(`DELETE FROM question_options WHERE question_id=?`, [questionId]);
+    await conn.query(`DELETE FROM question_options WHERE question_id=?`, [
+      questionId,
+    ]);
     if (question_type === 'mcq' && Array.isArray(options)) {
       for (let i = 0; i < options.length; i++) {
-        await conn.query(`
+        await conn.query(
+          `
           INSERT INTO question_options (question_id, option_text, is_correct, option_order)
           VALUES (?, ?, ?, ?)
-        `, [questionId, options[i].option_text, options[i].is_correct || false, i]);
+        `,
+          [
+            questionId,
+            options[i].option_text,
+            options[i].is_correct || false,
+            i,
+          ]
+        );
       }
     }
 
@@ -406,7 +542,10 @@ exports.updateQuestion = async (req, res) => {
 // Delete question
 exports.deleteQuestion = async (req, res) => {
   try {
-    await db.query(`DELETE FROM questions WHERE question_id=? AND exam_id=?`, [req.params.questionId, req.params.id]);
+    await db.query(`DELETE FROM questions WHERE question_id=? AND exam_id=?`, [
+      req.params.questionId,
+      req.params.id,
+    ]);
     res.json({ message: 'Question deleted' });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -421,11 +560,14 @@ exports.registerStudents = async (req, res) => {
   try {
     await conn.beginTransaction();
     for (const uid of user_ids) {
-      await conn.query(`
+      await conn.query(
+        `
         INSERT INTO student_exams (user_id, exam_id, status)
         VALUES (?, ?, 'registered')
         ON DUPLICATE KEY UPDATE status='registered'
-      `, [uid, examId]);
+      `,
+        [uid, examId]
+      );
     }
     await conn.commit();
     res.json({ message: 'Students registered' });
@@ -499,68 +641,78 @@ exports.downloadQuestionsTemplate = async (req, res) => {
     const examId = req.params.id;
 
     const workbook = new ExcelJS.Workbook();
-    const sheet = workbook.addWorksheet("Questions Template");
+    const sheet = workbook.addWorksheet('Questions Template');
 
     // Define headers
     const headers = [
-      "question_text",
-      "question_type",
-      "difficulty",
-      "marks",
-      "explanation",
-      "option_A",
-      "option_B",
-      "option_C",
-      "option_D",
-      "option_E",
-      "option_F",
-      "option_G",
-      "option_H",
-      "correct_option"
+      'question_text',
+      'question_type',
+      'difficulty',
+      'marks',
+      'explanation',
+      'option_A',
+      'option_B',
+      'option_C',
+      'option_D',
+      'option_E',
+      'option_F',
+      'option_G',
+      'option_H',
+      'correct_option',
     ];
 
     sheet.addRow(headers);
 
     // Sample MCQ row
     sheet.addRow([
-      "What is 2 + 2?",
-      "mcq",
-      "easy",
+      'What is 2 + 2?',
+      'mcq',
+      'easy',
       1,
-      "Basic arithmetic.",
-      "3",
-      "4",
-      "5",
-      "6",
-      "", "", "", "",
-      "B"
+      'Basic arithmetic.',
+      '3',
+      '4',
+      '5',
+      '6',
+      '',
+      '',
+      '',
+      '',
+      'B',
     ]);
 
     // Sample Descriptive row
     sheet.addRow([
       "Explain Newton's second law in one or two lines.",
-      "descriptive",
-      "medium",
+      'descriptive',
+      'medium',
       5,
-      "Mention F = m·a and its implications.",
-      "", "", "", "", "", "", "", "",
-      ""
+      'Mention F = m·a and its implications.',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
     ]);
 
     res.setHeader(
-      "Content-Type",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     );
     res.setHeader(
-      "Content-Disposition",
-      `attachment; filename=questions_template_exam_${examId || "sample"}.xlsx`
+      'Content-Disposition',
+      `attachment; filename=questions_template_exam_${examId || 'sample'}.xlsx`
     );
 
     await workbook.xlsx.write(res);
     res.end();
   } catch (err) {
-    console.error("downloadQuestionsTemplate error:", err);
-    res.status(500).json({ message: "Failed to generate XLSX template" });
+    console.error('downloadQuestionsTemplate error:', err);
+    res.status(500).json({ message: 'Failed to generate XLSX template' });
   }
 };
 
@@ -624,10 +776,13 @@ exports.downloadAnswerKeyPdf = async (req, res) => {
     // Header
     doc.fontSize(18).text(`${exam.title} — Answer Key`, { align: 'center' });
     doc.moveDown(0.5);
-    doc.fontSize(10)
+    doc
+      .fontSize(10)
       .text(`Exam Type: ${exam.exam_type || '-'}`)
       .text(`Format: ${exam.exam_format || '-'}`)
-      .text(`Total Marks: ${exam.total_marks ?? 0} | Duration: ${exam.duration ?? 0} min`)
+      .text(
+        `Total Marks: ${exam.total_marks ?? 0} | Duration: ${exam.duration ?? 0} min`
+      )
       .text(`Start: ${exam.start_date || '-'} ${exam.start_time || ''}`);
     doc.moveDown();
 
@@ -637,24 +792,36 @@ exports.downloadAnswerKeyPdf = async (req, res) => {
 
     for (const q of questions) {
       doc.moveDown(0.3);
-      doc.fontSize(12).text(`Q${qNum}. ${q.question_text}`, { continued: false });
+      doc
+        .fontSize(12)
+        .text(`Q${qNum}. ${q.question_text}`, { continued: false });
 
       if (q.question_type === 'mcq') {
         const opts = optionsByQ.get(q.question_id) || [];
         const correctIndex = opts.findIndex(o => o.is_correct === 1);
         const correctLabel = correctIndex >= 0 ? letter(correctIndex) : '—';
 
-        doc.fontSize(10).text(`Type: MCQ  |  Marks: ${q.marks ?? 0}  |  Difficulty: ${q.difficulty || '-'}`);
+        doc
+          .fontSize(10)
+          .text(
+            `Type: MCQ  |  Marks: ${q.marks ?? 0}  |  Difficulty: ${q.difficulty || '-'}`
+          );
         doc.text(`Answer: ${correctLabel}`);
       } else {
-        doc.fontSize(10).text(
-          `Type: ${q.question_type.toUpperCase()}  |  Marks: ${q.marks ?? 0}  |  Difficulty: ${q.difficulty || '-'}`
-        );
+        doc
+          .fontSize(10)
+          .text(
+            `Type: ${q.question_type.toUpperCase()}  |  Marks: ${q.marks ?? 0}  |  Difficulty: ${q.difficulty || '-'}`
+          );
         doc.text(`Answer: — (no fixed key)`);
       }
 
       doc.moveDown(0.2);
-      doc.moveTo(doc.x, doc.y).lineTo(550, doc.y).strokeColor('#cccccc').stroke();
+      doc
+        .moveTo(doc.x, doc.y)
+        .lineTo(550, doc.y)
+        .strokeColor('#cccccc')
+        .stroke();
       qNum++;
     }
 
@@ -670,28 +837,35 @@ exports.getSetsForExamGroup = async (req, res) => {
   const examId = req.params.id;
   try {
     // Load the base exam (for group keys)
-    const [rows] = await db.query(`
+    const [rows] = await db.query(
+      `
       SELECT title, start_date, category
       FROM exams
       WHERE exam_id=?
       LIMIT 1
-    `, [examId]);
+    `,
+      [examId]
+    );
 
-    if (!rows.length) return res.status(404).json({ message: 'Exam not found' });
+    if (!rows.length)
+      return res.status(404).json({ message: 'Exam not found' });
     const { title, start_date, category } = rows[0];
 
     // Fetch all sets in the same group
-    const [sets] = await db.query(`
+    const [sets] = await db.query(
+      `
       SELECT exam_id, set_type
       FROM exams
       WHERE title=? AND start_date=? AND category=?
       ORDER BY set_type ASC
-    `, [title, start_date, category]);
+    `,
+      [title, start_date, category]
+    );
 
     res.json({
       group: { title, start_date, category },
       sets: sets.map(s => s.set_type).filter(Boolean),
-      count: sets.filter(s => !!s.set_type).length
+      count: sets.filter(s => !!s.set_type).length,
     });
   } catch (err) {
     res.status(500).json({ message: err.message });

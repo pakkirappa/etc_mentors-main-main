@@ -20,10 +20,13 @@ exports.createSubject = async (req, res, next) => {
   }
   try {
     const { name, code, description, exam_type, is_active } = req.body;
-    const [result] = await pool.query(`
+    const [result] = await pool.query(
+      `
       INSERT INTO subjects (name, code, description, exam_type, is_active)
       VALUES (?, ?, ?, ?, ?)
-    `, [name, code, description, exam_type, is_active]);
+    `,
+      [name, code, description, exam_type, is_active]
+    );
     res.json({ message: 'Subject created', subject_id: result.insertId });
   } catch (err) {
     next(new Error('Failed to create subject'));
@@ -64,9 +67,12 @@ exports.updateSubject = async (req, res, next) => {
       return res.status(400).json({ message: 'No fields to update' });
     }
     values.push(id);
-    await pool.query(`
+    await pool.query(
+      `
       UPDATE subjects SET ${updateFields.join(', ')} WHERE subject_id = ?
-    `, values);
+    `,
+      values
+    );
     res.json({ message: 'Subject updated' });
   } catch (err) {
     next(new Error('Failed to update subject'));
@@ -76,9 +82,12 @@ exports.updateSubject = async (req, res, next) => {
 exports.deleteSubject = async (req, res, next) => {
   try {
     const { id } = req.params;
-    await pool.query(`
+    await pool.query(
+      `
       DELETE FROM subjects WHERE subject_id = ?
-    `, [id]);
+    `,
+      [id]
+    );
     res.json({ message: 'Subject deleted' });
   } catch (err) {
     next(new Error('Failed to delete subject'));

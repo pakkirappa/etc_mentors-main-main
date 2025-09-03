@@ -1,15 +1,15 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const examsController = require("../../controllers/mobile/examsController");
-const auth = require("../../middleware/auth");
+const examsController = require('../../controllers/mobile/examsController');
+const auth = require('../../middleware/auth');
 
 // Exam listing
-router.get("/list", auth, examsController.getExams);
+router.get('/list', auth, examsController.getExams);
 
 // Register for exam
-router.post("/:examId/register", auth, examsController.registerExam);
+router.post('/:examId/register', auth, examsController.registerExam);
 
 // Start exam
-router.get("/:examId/start", auth, examsController.startExam);
+router.get('/:examId/start', auth, examsController.startExam);
 
 module.exports = router;

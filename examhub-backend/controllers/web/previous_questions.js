@@ -1,42 +1,42 @@
 const pool = require('../../config/db');
-const s3 = require("../../services/storage");
-const multer = require("multer");
+const s3 = require('../../services/storage');
+const multer = require('multer');
 
 const upload = multer({ storage: multer.memoryStorage() });
 
 exports.uploadResource = [
-  upload.single("file"),
+  upload.single('file'),
   async (req, res) => {
     try {
       const file = req.file;
       const fileName = `${Date.now()}-${file.originalname}`;
       const params = {
-        Bucket: "ymts",
+        Bucket: 'ymts',
         Key: fileName,
         Body: file.buffer,
-        ACL: "public-read",
-        ContentType: file.mimetype
+        ACL: 'public-read',
+        ContentType: file.mimetype,
       };
 
       const data = await s3.upload(params).promise();
       res.json({ url: data.Location });
     } catch (err) {
       console.error(err);
-      res.status(500).json({ error: "Upload failed" });
+      res.status(500).json({ error: 'Upload failed' });
     }
-  }
+  },
 ];
 
 function getUserIdFromToken(user) {
   if (!user) return null;
 
   let cand =
-    user.user_id ??         
-    user.id ??              
-    user.sub ??            
-    user.userId ??        
-    user.uid ??             
-    user.userKey ??         
+    user.user_id ??
+    user.id ??
+    user.sub ??
+    user.userId ??
+    user.uid ??
+    user.userKey ??
     null;
 
   if (cand == null) return null;
@@ -50,19 +50,43 @@ function getUserIdFromToken(user) {
 exports.list = async (req, res, next) => {
   try {
     const {
-      course, subject_mode, startDate, endDate, uploaded_by, q,
-      page = 1, pageSize = 10
+      course,
+      subject_mode,
+      startDate,
+      endDate,
+      uploaded_by,
+      q,
+      page = 1,
+      pageSize = 10,
     } = req.query;
 
     const conds = [];
     const params = [];
 
-    if (course)       { conds.push('pqs.course = ?'); params.push(course); }
-    if (subject_mode) { conds.push('pqs.subject_mode = ?'); params.push(subject_mode); }
-    if (uploaded_by)  { conds.push('pqs.uploaded_by = ?'); params.push(uploaded_by); }
-    if (startDate)    { conds.push('pqs.exam_conducted_on >= ?'); params.push(startDate); }
-    if (endDate)      { conds.push('pqs.exam_conducted_on <= ?'); params.push(endDate); }
-    if (q)            { conds.push('(pqs.notes LIKE ? OR pqs.resource_url LIKE ?)'); params.push(`%${q}%`, `%${q}%`); }
+    if (course) {
+      conds.push('pqs.course = ?');
+      params.push(course);
+    }
+    if (subject_mode) {
+      conds.push('pqs.subject_mode = ?');
+      params.push(subject_mode);
+    }
+    if (uploaded_by) {
+      conds.push('pqs.uploaded_by = ?');
+      params.push(uploaded_by);
+    }
+    if (startDate) {
+      conds.push('pqs.exam_conducted_on >= ?');
+      params.push(startDate);
+    }
+    if (endDate) {
+      conds.push('pqs.exam_conducted_on <= ?');
+      params.push(endDate);
+    }
+    if (q) {
+      conds.push('(pqs.notes LIKE ? OR pqs.resource_url LIKE ?)');
+      params.push(`%${q}%`, `%${q}%`);
+    }
 
     const where = conds.length ? `WHERE ${conds.join(' AND ')}` : '';
     const limit = Math.max(1, Math.min(100, Number(pageSize)));
@@ -94,32 +118,51 @@ exports.create = async (req, res, next) => {
   try {
     const uploader = getUserIdFromToken(req.user);
     if (uploader == null) {
-      return res.status(401).json({ message: 'Unauthenticated: user id not present in token' });
+      return res
+        .status(401)
+        .json({ message: 'Unauthenticated: user id not present in token' });
     }
 
     const {
       course,
-      subject_mode,             
-      subjects,                  
+      subject_mode,
+      subjects,
       exam_conducted_on,
       resource_url,
-      notes
+      notes,
     } = req.body;
 
     // Basic validation
-    if (!course || !subject_mode || !Array.isArray(subjects) || !subjects.length || !resource_url) {
+    if (
+      !course ||
+      !subject_mode ||
+      !Array.isArray(subjects) ||
+      !subjects.length ||
+      !resource_url
+    ) {
       return res.status(400).json({ message: 'Missing required fields.' });
     }
 
     // Enforce single vs multiple on backend too (defensive)
-    const trimmed = subjects.map(s => ({ ...s, name: String(s.name || '').trim() })).filter(s => s.name);
+    const trimmed = subjects
+      .map(s => ({ ...s, name: String(s.name || '').trim() }))
+      .filter(s => s.name);
     if (subject_mode === 'single') {
       if (trimmed.length !== 1) {
-        return res.status(400).json({ message: 'Single subject mode requires exactly one subject name.' });
+        return res
+          .status(400)
+          .json({
+            message: 'Single subject mode requires exactly one subject name.',
+          });
       }
     } else if (subject_mode === 'multiple') {
       if (trimmed.length < 2) {
-        return res.status(400).json({ message: 'Multiple subject mode requires at least two subject names.' });
+        return res
+          .status(400)
+          .json({
+            message:
+              'Multiple subject mode requires at least two subject names.',
+          });
       }
     }
 
@@ -135,11 +178,14 @@ exports.create = async (req, res, next) => {
       exam_conducted_on || null,
       resource_url,
       notes || null,
-      uploader
+      uploader,
     ];
 
     const [result] = await pool.query(sql, params);
-    const [[row]] = await pool.query(`SELECT * FROM previous_question_sets WHERE pqs_id = ?`, [result.insertId]);
+    const [[row]] = await pool.query(
+      `SELECT * FROM previous_question_sets WHERE pqs_id = ?`,
+      [result.insertId]
+    );
     res.status(201).json(row);
   } catch (err) {
     next(new Error(`Failed to create previous question set: ${err.message}`));
@@ -151,7 +197,9 @@ exports.remove = async (req, res, next) => {
   try {
     const uploader = getUserIdFromToken(req.user);
     if (uploader == null) {
-      return res.status(401).json({ message: 'Unauthenticated: user id not present in token' });
+      return res
+        .status(401)
+        .json({ message: 'Unauthenticated: user id not present in token' });
     }
 
     const id = Number(req.params.id);
@@ -171,11 +219,15 @@ exports.remove = async (req, res, next) => {
 
     if (row.uploaded_by !== uploader) {
       // If you later add roles, allow admins here
-      return res.status(403).json({ message: 'You are not allowed to delete this record' });
+      return res
+        .status(403)
+        .json({ message: 'You are not allowed to delete this record' });
     }
 
     // Hard delete (no soft-delete column in current schema)
-    await pool.query('DELETE FROM previous_question_sets WHERE pqs_id = ?', [id]);
+    await pool.query('DELETE FROM previous_question_sets WHERE pqs_id = ?', [
+      id,
+    ]);
 
     return res.status(200).json({ message: 'Deleted', pqs_id: id });
   } catch (err) {

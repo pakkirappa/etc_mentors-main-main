@@ -1,7 +1,7 @@
 const pool = require('../../config/db');
 
 // Ensure array -> JSON string for DB
-const toJson = (arr) => JSON.stringify(arr || []);
+const toJson = arr => JSON.stringify(arr || []);
 
 exports.list = async (req, res, next) => {
   try {
@@ -12,10 +12,14 @@ exports.list = async (req, res, next) => {
     // Normalize JSON for frontend
     const data = rows.map(r => ({
       ...r,
-      permissions: Array.isArray(r.permissions) ? r.permissions : JSON.parse(r.permissions || '[]')
+      permissions: Array.isArray(r.permissions)
+        ? r.permissions
+        : JSON.parse(r.permissions || '[]'),
     }));
     res.json(data);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 };
 
 exports.create = async (req, res, next) => {
@@ -26,7 +30,9 @@ exports.create = async (req, res, next) => {
       [name, description || null, toJson(permissions)]
     );
     res.status(201).json({ message: 'Role created' });
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 };
 
 exports.update = async (req, res, next) => {
@@ -39,13 +45,19 @@ exports.update = async (req, res, next) => {
       [name, description || null, toJson(permissions), id]
     );
     res.json({ message: 'Role updated' });
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 };
 
 exports.remove = async (req, res, next) => {
   try {
     const { id } = req.params;
-    await pool.query(`DELETE FROM roles WHERE role_id=? AND is_system=FALSE`, [id]);
+    await pool.query(`DELETE FROM roles WHERE role_id=? AND is_system=FALSE`, [
+      id,
+    ]);
     res.json({ message: 'Role deleted' });
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 };
