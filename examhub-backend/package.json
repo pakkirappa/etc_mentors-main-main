@@ -7,7 +7,9 @@
     "dev": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "node -c server.js",
-    "check-syntax": "node -c server.js && node -c controllers/web/authController.js && node -c controllers/web/dashboard.js"
+    "check-syntax": "node -c server.js && node -c controllers/web/authController.js && node -c controllers/web/dashboard.js",
+    "format": "prettier --write \"**/*.{js,json}\"",
+    "format:check": "prettier --check \"**/*.{js,json}\""
   },
   "keywords": [],
   "author": "",
@@ -25,5 +27,8 @@
     "mysql2": "^3.14.3",
     "path": "^0.12.7",
     "pdfkit": "^0.17.1"
+  },
+  "devDependencies": {
+    "prettier": "^3.6.2"
   }
 }
