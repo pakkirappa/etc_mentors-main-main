@@ -1,0 +1,12 @@
+node_modules
+dist
+build
+*.log
+.env
+.env.local
+.env.development
+.env.production
+coverage
+.nyc_output
+*.tgz
+*.tar.gz

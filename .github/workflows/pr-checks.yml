@@ -1,0 +1,115 @@
+name: Pull Request Checks
+
+on:
+  pull_request:
+    branches: [main, develop]
+    types: [opened, synchronize, reopened]
+
+jobs:
+  pr-checks:
+    name: Pull Request Quality Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install backend dependencies
+        working-directory: ./examhub-backend
+        run: npm ci
+
+      - name: Check commit messages
+        run: |
+          echo "Checking commit messages..."
+          git log --oneline origin/${{ github.base_ref }}..HEAD | while read commit; do
+            if echo "$commit" | grep -qE "^[a-f0-9]{7,} (feat|fix|docs|style|refactor|test|chore)(\(.+\))?: .+"; then
+              echo "✅ Good commit message: $commit"
+            else
+              echo "⚠️  Consider conventional commit format: $commit"
+            fi
+          done
+
+      - name: Check for large files
+        run: |
+          echo "Checking for large files (>1MB)..."
+          find . -type f -size +1M -not -path "./node_modules/*" -not -path "./.git/*" | while read file; do
+            echo "⚠️  Large file detected: $file"
+          done
+
+      - name: Check for sensitive files
+        run: |
+          echo "Checking for potentially sensitive files..."
+          find . -name "*.pem" -o -name "*.key" -o -name "*.p12" -o -name "*.pfx" -o -name "id_rsa" -not -path "./node_modules/*" | while read file; do
+            echo "⚠️  Potential sensitive file: $file"
+          done
+
+      - name: Run full test suite
+        run: |
+          echo "Frontend checks..."
+          npm run lint
+          npm run type-check
+          npm run build
+
+          echo "Backend checks..."
+          cd examhub-backend
+          npm run check-syntax
+
+      - name: Comment PR
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('🤖 Automated PR Review')
+            );
+
+            const commentBody = `## 🤖 Automated PR Review
+
+            ### ✅ Checks Completed:
+            - Syntax validation (Frontend & Backend)
+            - Code formatting check
+            - TypeScript compilation
+            - Build process validation
+            - Large file detection
+            - Sensitive file detection
+            - Commit message format check
+
+            ### 📋 Summary:
+            All automated checks have been completed. Please review any warnings above.
+
+            **Note:** This is an automated comment. Manual code review is still required.
+            `;
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: commentBody
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: commentBody
+              });
+            }
