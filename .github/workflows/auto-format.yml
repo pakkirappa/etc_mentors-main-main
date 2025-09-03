@@ -28,7 +28,7 @@ jobs:
 
       - name: Install backend dependencies
         working-directory: ./examhub-backend
-        run: npm ci
+        run: npm install
 
       - name: Format backend code
         working-directory: ./examhub-backend
